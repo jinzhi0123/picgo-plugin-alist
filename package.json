@@ -1,13 +1,14 @@
 {
   "name": "picgo-plugin-alist",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "使用alist作为中转并实现对各个网盘的图床应用",
   "author": "jinzhi0123",
   "license": "ISC",
   "keywords": [
     "picgo",
     "picgo-gui-plugin",
-    "picgo-plugin"
+    "picgo-plugin",
+    "alist"
   ],
   "main": "dist/index.js",
   "scripts": {
