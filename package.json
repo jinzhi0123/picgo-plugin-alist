@@ -1,0 +1,31 @@
+{
+  "name": "picgo-plugin-alist",
+  "version": "1.0.0",
+  "description": "使用alist作为中转并实现对各个网盘的图床应用",
+  "author": "jinzhi0123",
+  "license": "ISC",
+  "keywords": [
+    "picgo",
+    "picgo-gui-plugin",
+    "picgo-plugin"
+  ],
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc -p .",
+    "dev": "tsc -w -p .",
+    "patch": "npm version patch && git push origin master && git push origin --tags",
+    "minor": "npm version minor && git push origin master && git push origin --tags",
+    "major": "npm version major && git push origin master && git push origin --tags"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^0.27.0",
+    "@types/node": "^18.8.2",
+    "eslint": "^8.24.0",
+    "picgo": "1.5.0-alpha.0",
+    "typescript": "^4.8.4"
+  }
+}
