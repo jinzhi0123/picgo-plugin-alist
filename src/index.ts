@@ -5,6 +5,7 @@ import fs, { ReadStream } from 'fs'
 import type { IPluginConfig, PicGo } from 'picgo'
 
 interface UserConfig {
+  version: string | number
   url: string
   token: string
   path: string
@@ -15,6 +16,8 @@ interface PostOptions {
   path: string
   token: string
   files: Stream
+  version: string | number
+  fileName?: string
 }
 
 interface Files {
@@ -28,19 +31,46 @@ const uploaderName = 'alist'
 const bedName = `picBed.${uploaderName}`
 
 const getPostOptions = (options: PostOptions) => {
-  const { url, files, token, path } = options
-  return {
+  const { url, files, token, path, version, fileName } = options
+  const v2options = {
     method: 'POST',
     url: `${url}/api/public/upload`,
     headers: {
-      "contentType": 'multipart/form-data',
+      // "Content-Type": 'multipart/form-data',
       'User-Agent': 'PicGo',
       'Authorization': token,
     },
     formData: {
       path,
-      files,
+      files: {
+        value: files,
+        options: {
+          filename: fileName,
+        },
+      },
     },
+  }
+  const v3options = {
+    method: 'PUT',
+    url: `${url}/api/fs/form`,
+    headers: {
+      // "Content-Type": 'multipart/form-data',
+      'User-Agent': 'PicGo',
+      'Authorization': token,
+      'file-path': `%2F${path}%2F${fileName}`,
+    },
+    formData: {
+      file: {
+        value: files,
+        options: {
+          filename: fileName,
+        },
+      },
+    },
+  }
+  switch (Number(version)) {
+    case 2:return v2options
+    case 3:return v3options
   }
 }
 
@@ -49,7 +79,7 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
   if (!userConfig)
     throw new Error("Can't find uploader config")
 
-  const { url, token, path } = userConfig
+  const { url, token, path, version } = userConfig
   try {
     const imgList = ctx.output
     for (const i in imgList) {
@@ -62,6 +92,8 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
         token,
         path,
         files: stream,
+        version,
+        fileName,
       })
       fs.rm(`./${fileName}`, (err) => {
         if (err)
@@ -102,6 +134,14 @@ const getConfig = (ctx: PicGo): IPluginConfig[] => {
   }
 
   const config = [
+    {
+      name: 'version',
+      type: 'input',
+      default: userConfig.version ?? '',
+      message: '你的alist版本，2或3',
+      required: true,
+      alias: 'alist版本',
+    },
     {
       name: 'url',
       type: 'input',
