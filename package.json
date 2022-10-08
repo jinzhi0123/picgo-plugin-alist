@@ -4,6 +4,7 @@
   "description": "使用alist作为中转并实现对各个网盘的图床应用",
   "author": "jinzhi0123",
   "license": "ISC",
+  "homepage": "https://github.com/jinzhi0123/picgo-plugin-alist",
   "keywords": [
     "picgo",
     "picgo-gui-plugin",
