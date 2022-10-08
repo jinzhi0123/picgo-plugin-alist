@@ -57,7 +57,7 @@ const getPostOptions = (options: PostOptions) => {
       // "Content-Type": 'multipart/form-data',
       'User-Agent': 'PicGo',
       'Authorization': token,
-      'file-path': `%2F${path}%2F${fileName}`,
+      'file-path': encodeURIComponent(`/${path}/${fileName}`),
     },
     formData: {
       file: {
@@ -78,7 +78,6 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
   const userConfig: UserConfig = ctx.getConfig(bedName)
   if (!userConfig)
     throw new Error("Can't find uploader config")
-
   const { url, token, path, version } = userConfig
   try {
     const imgList = ctx.output
