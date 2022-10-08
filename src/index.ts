@@ -127,10 +127,10 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
 }
 
 const getConfig = (ctx: PicGo): IPluginConfig[] => {
-  const userConfig: UserConfig = ctx.getConfig(bedName)
+  let userConfig: UserConfig = ctx.getConfig(bedName)
   if (!userConfig) {
   // throw new Error("Can't find uploader config")
-
+    userConfig = <any>{}
   }
 
   const config = [
