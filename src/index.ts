@@ -1,8 +1,7 @@
 import type { Stream } from 'stream'
-import { Duplex, PassThrough, Readable } from 'stream'
-import { request } from 'http'
-import fs, { ReadStream } from 'fs'
+import fs from 'fs'
 import type { IPluginConfig, PicGo } from 'picgo'
+import temporaryDirectory from 'temp-dir'
 
 interface UserConfig {
   version: string | number
@@ -84,8 +83,9 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
     for (const i in imgList) {
       const image = imgList[i].buffer
       const fileName = imgList[i].fileName
-      fs.writeFileSync(`./${fileName}`, image)
-      const stream = fs.createReadStream(`./${fileName}`)
+      fs.writeFileSync(`${temporaryDirectory}/${fileName}`, image)
+
+      const stream = fs.createReadStream(`${temporaryDirectory}/${fileName}`)
       const postOptions = getPostOptions({
         url,
         token,
@@ -94,7 +94,7 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
         version,
         fileName,
       })
-      fs.rm(`./${fileName}`, (err) => {
+      fs.rm(`${temporaryDirectory}/${fileName}`, (err) => {
         if (err)
           ctx.log.warn("Can't delete")
       })
