@@ -34,6 +34,7 @@ const getPostOptions = (options: PostOptions) => {
   const v2options = {
     method: 'POST',
     url: `${url}/api/public/upload`,
+    rejectUnauthorized: false,
     headers: {
       // "Content-Type": 'multipart/form-data',
       'User-Agent': 'PicGo',
@@ -52,6 +53,7 @@ const getPostOptions = (options: PostOptions) => {
   const v3options = {
     method: 'PUT',
     url: `${url}/api/fs/form`,
+    rejectUnauthorized: false,
     headers: {
       // "Content-Type": 'multipart/form-data',
       'User-Agent': 'PicGo',
@@ -94,7 +96,7 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
         version,
         fileName,
       })
-      fs.rm(`${temporaryDirectory}/${fileName}`, (err) => {
+      fs.unlink(`${temporaryDirectory}/${fileName}`, (err) => {
         if (err)
           ctx.log.warn("Can't delete")
       })
