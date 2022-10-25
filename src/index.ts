@@ -1,5 +1,6 @@
 import type { Stream } from 'stream'
 import fs from 'fs'
+import nodePath from 'path'
 import type { IPluginConfig, PicGo } from 'picgo'
 import temporaryDirectory from 'temp-dir'
 
@@ -80,14 +81,22 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
   if (!userConfig)
     throw new Error("Can't find uploader config")
   const { url, token, path, version } = userConfig
-  try {
-    const imgList = ctx.output
-    for (const i in imgList) {
+  const imgList = ctx.output
+  for (const i in imgList) {
+    try {
       const image = imgList[i].buffer
       const fileName = imgList[i].fileName
-      fs.writeFileSync(`${temporaryDirectory}/${fileName}`, image)
-
-      const stream = fs.createReadStream(`${temporaryDirectory}/${fileName}`)
+      const tempFilePath = nodePath.join(temporaryDirectory, fileName)
+      try {
+        fs.writeFileSync(tempFilePath, image)
+      }
+      catch (err) {
+        throw new Error(`[缓存文件失败]文件${tempFilePath},${err.message}`)
+      }
+      ctx.log.info(`[测试]已经写入文件`)
+      const stream = fs.createReadStream(tempFilePath)
+      if (!stream)
+        throw new Error(`[读取缓存文件失败]文件${tempFilePath}`)
       const postOptions = getPostOptions({
         url,
         token,
@@ -96,33 +105,36 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
         version,
         fileName,
       })
-      fs.unlink(`${temporaryDirectory}/${fileName}`, (err) => {
-        if (err)
-          ctx.log.warn("Can't delete")
-      })
       try {
         const res = await ctx.request(postOptions)
-        ctx.log.info(fileName)
-        ctx.log.info(JSON.stringify(res))
+        ctx.log.info(`[文件名]${fileName}`)
+        ctx.log.info(`[请求结果]${JSON.stringify(res)}`)
+        if (res.statusCode !== Number(200))
+          throw new Error(`[请求出错]${res}`)
         imgList[i].imgUrl = `${url}/d/${path}/${imgList[i].fileName}`
       }
       catch (err) {
-        ctx.log.error(`[上传操作]异常：${err.message}`)
-        ctx.emit("notification", {
-          title: "上传失败",
-          body: JSON.stringify(err),
-        })
+        throw new Error(`[上传操作]异常：${err.message}`)
+      }
+      finally {
+        stream.close()
+      }
+      try {
+        fs.unlinkSync(tempFilePath)
+      }
+      catch (err) {
+        ctx.log.warn(`[删除缓存文件失败]文件${tempFilePath}，程序继续执行,ERROR:${err}`)
       }
       delete imgList[i].base64Image
       delete imgList[i].buffer
     }
-  }
-  catch (error) {
-    ctx.log.error(error)
-    ctx.emit('notification', {
-      title: '上传失败',
-      body: error.message,
-    })
+    catch (error) {
+      ctx.log.error(error)
+      ctx.emit('notification', {
+        title: '上传失败',
+        body: error.message,
+      })
+    }
   }
   return ctx
 }
