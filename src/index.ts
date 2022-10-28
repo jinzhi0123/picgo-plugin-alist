@@ -87,13 +87,14 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
       const image = imgList[i].buffer
       const fileName = imgList[i].fileName
       const tempFilePath = nodePath.join(temporaryDirectory, fileName)
+      ctx.log.info(`[信息]version:${version},path:${path},fileName:${fileName},url:${url}`)
       try {
         fs.writeFileSync(tempFilePath, image)
       }
       catch (err) {
         throw new Error(`[缓存文件失败]文件${tempFilePath},${err.message}`)
       }
-      ctx.log.info(`[测试]已经写入文件`)
+      ctx.log.info(`[信息]已经写入文件${tempFilePath}`)
       const stream = fs.createReadStream(tempFilePath)
       if (!stream)
         throw new Error(`[读取缓存文件失败]文件${tempFilePath}`)
@@ -107,9 +108,9 @@ const handle = async (ctx: PicGo): Promise<PicGo> => {
       })
       try {
         const res = await ctx.request(postOptions)
-        ctx.log.info(`[文件名]${fileName}`)
         ctx.log.info(`[请求结果]${JSON.stringify(res)}`)
-        if (res.statusCode !== Number(200))
+        const resObject = JSON.parse(res)
+        if (resObject.code !== Number(200))
           throw new Error(`[请求出错]${res}`)
         imgList[i].imgUrl = `${url}/d/${path}/${imgList[i].fileName}`
       }
