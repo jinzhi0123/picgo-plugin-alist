@@ -1,0 +1,49 @@
+import type { IPluginConfig, PicGo } from 'picgo'
+import type { UserConfig } from './types'
+
+export const uploaderName = 'alist'
+export const bedName = `picBed.${uploaderName}`
+
+export const getConfig = (ctx: PicGo): IPluginConfig[] => {
+  let userConfig: UserConfig = ctx.getConfig(bedName)
+  if (!userConfig) {
+  // throw new Error("Can't find uploader config")
+    userConfig = <any>{}
+  }
+
+  const config = [
+    {
+      name: 'version',
+      type: 'input',
+      default: userConfig.version ?? '',
+      message: '你的alist版本，2或3',
+      required: true,
+      alias: 'alist版本',
+    },
+    {
+      name: 'url',
+      type: 'input',
+      default: userConfig.url ?? '',
+      message: '你的alist地址，如https://alist.example.com。',
+      required: true,
+      alias: 'alist地址',
+    },
+    {
+      name: 'path',
+      type: 'input',
+      default: userConfig.path ?? '',
+      message: '上传的相对路径，如assets。',
+      required: true,
+      alias: '上传路径',
+    },
+    {
+      name: 'token',
+      type: 'password',
+      default: userConfig.token ?? '',
+      message: '填写管理员token，获取请参考alist文档。',
+      required: true,
+      alias: '管理员token',
+    },
+  ]
+  return config
+}
