@@ -4,11 +4,15 @@ specifiers:
   '@antfu/eslint-config': ^0.27.0
   '@types/node': ^18.8.2
   eslint: ^8.24.0
+  js-base64: ^3.7.4
+  js-sha256: ^0.9.0
   picgo: 1.5.0-alpha.0
   temp-dir: 2.0.0
   typescript: ^4.8.4
 
 dependencies:
+  js-base64: 3.7.4
+  js-sha256: 0.9.0
   temp-dir: 2.0.0
 
 devDependencies:
@@ -2369,9 +2373,17 @@ packages:
       is-object: 1.0.2
     dev: true
 
+  /js-base64/3.7.4:
+    resolution: {integrity: sha512-wpM/wi20Tl+3ifTyi0RdDckS4YTD4Lf953mBRrpG8547T7hInHNPEj8+ck4gB8VDcGyeAWFK++Wb/fU1BeavKQ==}
+    dev: false
+
   /js-sdsl/4.1.5:
     resolution: {integrity: sha512-08bOAKweV2NUC1wqTtf3qZlnpOX/R2DU9ikpjOHs0H+ibQv3zpncVQg6um4uYtRtrwIX8M4Nh3ytK4HGlYAq7Q==}
     dev: true
+
+  /js-sha256/0.9.0:
+    resolution: {integrity: sha512-sga3MHh9sgQN2+pJ9VYZ+1LPwXOxuBJBA5nrR5/ofPfuiJBE2hnjsaN8se8JznOmGLN2p49Pe5U/ttafcs/apA==}
+    dev: false
 
   /js-tokens/4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}

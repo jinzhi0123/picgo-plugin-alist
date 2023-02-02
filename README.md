@@ -22,6 +22,14 @@ plugin for picgo
 | 上传路径    | 上传的相对路径（alist内的路径，根据路径上传到对应网盘）                        | assets                    |
 | 管理员token | 管理员token([参考alist文档](https://alist-doc.nn.ci/docs/driver/alist/#token)) | balabala                  |
 
+## 说明
+### 高版本签名
+
+高版本alist加入了“签名”特性，并默认开启“签名所有”。改选项打开后，会向所有文件的直接链接添加签名(无论是否有密码)。
+如果遇到代码401错误，请在alist设置中关闭“签名所有”（Alist管理-设置-全局-签名所有）。
+![](/readme/sign_off.png)
+- 目前尝试仿照alist源码进行签名，但签名并不一致（失败~）。
+
 ## 安装
 
 - 在线安装
