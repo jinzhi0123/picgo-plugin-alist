@@ -4,6 +4,7 @@ export interface UserConfig {
   url: string
   token: string
   path: string
+  path_prefix: string
 }
 
 export interface PostOptions {

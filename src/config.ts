@@ -40,9 +40,17 @@ export const getConfig = (ctx: PicGo): IPluginConfig[] => {
       name: 'token',
       type: 'password',
       default: userConfig.token ?? '',
-      message: '填写管理员token，获取请参考alist文档。',
+      message: '填写用户token，获取请参考alist文档。',
       required: true,
-      alias: '管理员token',
+      alias: '用户token',
+    },
+    {
+      name: 'path_prefix',
+      type: 'input',
+      default: userConfig.path_prefix ?? '',
+      message: '如果使用的不是管理员token，填写下载直链中的路径前缀',
+      required: false,
+      alias: '路径前缀',
     },
   ]
   return config

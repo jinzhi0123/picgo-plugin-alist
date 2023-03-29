@@ -11,9 +11,10 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
   const userConfig: UserConfig = ctx.getConfig(bedName)
   if (!userConfig)
     throw new Error("Can't find uploader config")
-  let { url, path, version } = userConfig
+  let { url, path, version, path_prefix } = userConfig
   const { token } = userConfig
   path = rmBothEndSlashes(path)
+  path_prefix = rmBothEndSlashes(path_prefix)
   url = rmEndSlashes(url)
   version = Number(version)
   const imgList = ctx.output
@@ -46,7 +47,7 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
         ctx.log.info(`[请求结果]${JSON.stringify(res)}`)
         if (res.code !== Number(200))
           throw new Error(`[请求出错]${JSON.stringify(res)}`)
-        imgList[i].imgUrl = `${url}/d/${path}/${imgList[i].fileName}`
+        imgList[i].imgUrl = `${url}/d${path_prefix ? `/${path_prefix}` : ''}/${path}/${imgList[i].fileName}`
       }
       catch (err) {
         throw new Error(`[上传操作]异常：${err.message}`)
