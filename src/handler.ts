@@ -47,7 +47,7 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
         ctx.log.info(`[请求结果]${JSON.stringify(res)}`)
         if (res.code !== Number(200))
           throw new Error(`[请求出错]${JSON.stringify(res)}`)
-        imgList[i].imgUrl = `${url}/d${path_prefix ? `/${path_prefix}` : ''}/${path}/${imgList[i].fileName}`
+        imgList[i].imgUrl = `${url}/d${path_prefix ? `/${path_prefix}` : ''}/${path}/${(userConfig.filename_prefix || '') + imgList[i].fileName}`
       }
       catch (err) {
         throw new Error(`[上传操作]异常：${err.message}`)

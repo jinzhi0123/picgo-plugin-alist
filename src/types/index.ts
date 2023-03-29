@@ -5,6 +5,7 @@ export interface UserConfig {
   token: string
   path: string
   path_prefix: string
+  filename_prefix: string
 }
 
 export interface PostOptions {

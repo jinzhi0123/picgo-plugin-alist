@@ -52,6 +52,14 @@ export const getConfig = (ctx: PicGo): IPluginConfig[] => {
       required: false,
       alias: '路径前缀',
     },
+    {
+      name: 'filename_prefix',
+      type: 'input',
+      default: userConfig.filename_prefix ?? '',
+      message: 'Alist自动为文件名添加的前缀（如果有），如web',
+      required: false,
+      alias: '文件名前缀',
+    },
   ]
   return config
 }
