@@ -3,12 +3,13 @@ export interface UserConfig {
   version: string | number
   url: string
   token: string
-  path: string
+  uploadPath: string
+  accessPath: string
 }
 
 export interface PostOptions {
   url: string
-  path: string
+  uploadPath: string
   token: string
   files: Stream
   version: number
@@ -19,7 +20,7 @@ export interface RefreshOptions {
   url: string
   token: string
   version: number
-  path: string
+  uploadPath: string
 }
 
 export interface Files {

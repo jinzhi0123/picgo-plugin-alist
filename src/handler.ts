@@ -11,9 +11,13 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
   const userConfig: UserConfig = ctx.getConfig(bedName)
   if (!userConfig)
     throw new Error("Can't find uploader config")
-  let { url, path, version } = userConfig
+  let { url, uploadPath, accessPath, version } = userConfig
   const { token } = userConfig
-  path = rmBothEndSlashes(path)
+  uploadPath = rmBothEndSlashes(uploadPath)
+  if (!accessPath)
+    accessPath = uploadPath
+  else
+    accessPath = rmBothEndSlashes(accessPath)
   url = rmEndSlashes(url)
   version = Number(version)
   const imgList = ctx.output
@@ -22,7 +26,7 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
       const image = imgList[i].buffer
       const fileName = imgList[i].fileName
       const tempFilePath = nodePath.join(temporaryDirectory, fileName)
-      ctx.log.info(`[信息]\{version:${version},path:${path},fileName:${fileName}\}`)
+      ctx.log.info(`[信息]\{version:${version},uploadPath:${uploadPath},fileName:${fileName}\}`)
       try {
         fs.writeFileSync(tempFilePath, image)
       }
@@ -36,7 +40,7 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
       const postOptions = getPostOptions({
         url,
         token,
-        path,
+        uploadPath,
         files: stream,
         version,
         fileName,
@@ -46,7 +50,7 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
         ctx.log.info(`[请求结果]${JSON.stringify(res)}`)
         if (res.code !== Number(200))
           throw new Error(`[请求出错]${JSON.stringify(res)}`)
-        imgList[i].imgUrl = `${url}/d/${path}/${imgList[i].fileName}`
+        imgList[i].imgUrl = `${url}/d/${accessPath}/${imgList[i].fileName}`
       }
       catch (err) {
         throw new Error(`[上传操作]异常：${err.message}`)
@@ -63,7 +67,7 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
       try {
         const refreshOptions = getRefreshOptions({
           url,
-          path,
+          uploadPath,
           version,
           token,
         })

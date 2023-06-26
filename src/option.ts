@@ -1,7 +1,7 @@
 import type { PostOptions, RefreshOptions, UserConfig } from './types'
 
 export const getRefreshOptions = (options: RefreshOptions) => {
-  const { url, token, path, version } = options
+  const { url, token, uploadPath, version } = options
   const v3options = {
     method: 'POST',
     url: `${url}/api/fs/list`,
@@ -14,7 +14,7 @@ export const getRefreshOptions = (options: RefreshOptions) => {
     body: {
       page: 1,
       password: "",
-      path: `/${path}`,
+      path: `/${uploadPath}`,
       per_page: 0,
       refresh: true,
     },
@@ -30,7 +30,7 @@ export const getRefreshOptions = (options: RefreshOptions) => {
       'Authorization': token,
     },
     body: {
-      path: `/${path}`,
+      path: `/${uploadPath}`,
     },
     json: true,
   }
@@ -41,7 +41,7 @@ export const getRefreshOptions = (options: RefreshOptions) => {
 }
 
 export const getPostOptions = (options: PostOptions) => {
-  const { url, files, token, path, version, fileName } = options
+  const { url, files, token, uploadPath, version, fileName } = options
   const v2options = {
     method: 'POST',
     url: `${url}/api/public/upload`,
@@ -52,7 +52,7 @@ export const getPostOptions = (options: PostOptions) => {
       'Authorization': token,
     },
     formData: {
-      path,
+      path: uploadPath,
       files: {
         value: files,
         options: {
@@ -70,7 +70,7 @@ export const getPostOptions = (options: PostOptions) => {
       // "Content-Type": 'multipart/form-data',
       'User-Agent': 'PicGo',
       'Authorization': token,
-      'file-path': encodeURIComponent(`/${path}/${fileName}`),
+      'file-path': encodeURIComponent(`/${uploadPath}/${fileName}`),
     },
     formData: {
       file: {
