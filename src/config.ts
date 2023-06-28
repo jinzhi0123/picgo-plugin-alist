@@ -29,9 +29,9 @@ export const getConfig = (ctx: PicGo): IPluginConfig[] => {
       alias: 'alist地址',
     },
     {
-      name: 'path',
+      name: 'uploadPath',
       type: 'input',
-      default: userConfig.path ?? '',
+      default: userConfig.uploadPath ?? '',
       message: '上传的相对路径，如assets。',
       required: true,
       alias: '上传路径',
@@ -43,6 +43,14 @@ export const getConfig = (ctx: PicGo): IPluginConfig[] => {
       message: '填写管理员token，获取请参考alist文档。',
       required: true,
       alias: '管理员token',
+    },
+    {
+      name: 'accessPath',
+      type: 'input',
+      default: userConfig.accessPath ?? '',
+      message: '若留空，则访问路径与上传路径一致。',
+      required: false,
+      alias: '访问路径',
     },
   ]
   return config
