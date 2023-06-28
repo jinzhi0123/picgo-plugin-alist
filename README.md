@@ -15,12 +15,14 @@ plugin for picgo
 
 ## 参数
 
-| key         | description                                                                    | example                   |
-| ----------- | ------------------------------------------------------------------------------ | ------------------------- |
-| alist版本   | 2或者3                                                                         | 3                         |
-| alist地址   | 你的alist地址                                                                  | https://alist.example.com |
-| 上传路径    | 上传的相对路径（alist内的路径，根据路径上传到对应网盘）                        | assets                    |
-| 管理员token | 管理员token([参考alist文档](https://alist-doc.nn.ci/docs/driver/alist/#token)) | balabala                  |
+| key         | 是否必填 | description                                                                    | example                   |
+| ----------- | -------- | ------------------------------------------------------------------------------ | ------------------------- |
+| alist版本   | √        | 2或者3                                                                         | 3                         |
+| alist地址   | √        | 你的alist地址                                                                  | https://alist.example.com |
+| 上传路径    | √        | 上传的相对路径（alist内的路径，根据路径上传到对应网盘）                        | assets                    |
+| 管理员token | √        | 管理员token([参考alist文档](https://alist-doc.nn.ci/docs/driver/alist/#token)) | balabala                  |
+| 访问路径    | ×        | 公开的访问路径（资源最终链接，默认同上传路径）                                 | public                    |
+
 
 ## 说明
 ### 高版本签名
