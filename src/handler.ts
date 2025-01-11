@@ -6,7 +6,7 @@ import { rmBothEndSlashes, rmEndSlashes } from './utils/index'
 
 type IImageInfo = PicGo['output'][0]
 
-interface SingleUploadConfig {
+interface SingleUploadOptions {
   url: string
   token: string
   uploadPath: string
@@ -14,16 +14,28 @@ interface SingleUploadConfig {
   version: number
 }
 
+function handleFileName(fileName: string) {
+  const fileNameParts = fileName.split('/')
+  return {
+    fileName: fileNameParts[fileNameParts.length - 1],
+    prefixPath: fileNameParts.slice(0, -1).join('/'),
+  }
+}
+
 async function handleSingleUpload(
   ctx: PicGo,
   image: IImageInfo,
-  config: SingleUploadConfig,
+  options: SingleUploadOptions,
 ): Promise<void> {
-  const { url, token, uploadPath, accessPath, version } = config
+  const { url, token, uploadPath: originalUploadPath, accessPath: originalAccessPath, version } = options
 
-  const fileName = image.fileName
+  const handledFileName = handleFileName(image.fileName)
 
-  ctx.log.info(`[信息] version:${version}, uploadPath:${uploadPath}, fileName:${image.fileName}`)
+  const fileName = handledFileName.fileName
+  const uploadPath = handledFileName.prefixPath ? `${originalUploadPath}/${handledFileName.prefixPath}` : originalUploadPath
+  const accessPath = handledFileName.prefixPath ? `${originalAccessPath}/${handledFileName.prefixPath}` : originalAccessPath
+
+  ctx.log.info(`[信息] version:${version}, uploadPath:${uploadPath}, fileName:${fileName}`)
 
   // 上传文件
   const postOptions = getPostOptions({
@@ -35,7 +47,7 @@ async function handleSingleUpload(
     fileName,
   })
 
-  ctx.log.info(`[开始上传] ${fileName}`)
+  ctx.log.info(`[开始上传] ${image.fileName}`)
   const uploadRes = await ctx.request<AlistResponse, IReqOptions>(postOptions)
 
   if (uploadRes.status !== 200)
@@ -58,7 +70,7 @@ async function handleSingleUpload(
 
   ctx.log.info(`[刷新请求结果] ${JSON.stringify({ code: refreshRes.data.code, message: refreshRes.data.message })}`)
 
-  image.imgUrl = `${url}/d/${accessPath}/${image.fileName}`
+  image.imgUrl = `${url}/d/${accessPath}/${fileName}`
   delete image.base64Image
   delete image.buffer
 }
@@ -68,7 +80,7 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
   if (!userConfig)
     throw new Error('找不到上传器配置')
 
-  const config = {
+  const options = {
     url: rmEndSlashes(userConfig.url),
     token: userConfig.token,
     uploadPath: rmBothEndSlashes(userConfig.uploadPath),
@@ -80,7 +92,7 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
 
   const uploads = ctx.output.map(async (image) => {
     try {
-      await handleSingleUpload(ctx, image, config)
+      await handleSingleUpload(ctx, image, options)
     }
     catch (error) {
       ctx.log.error(error)

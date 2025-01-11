@@ -28,7 +28,8 @@
     "stub": "unbuild --stub",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "release": "bumpp && npm publish"
+    "publish": "npm publish --registry https://registry.npmjs.org/",
+    "release": "npm run build && bumpp && npm run publish"
   },
   "publishConfig": {
     "access": "public"
