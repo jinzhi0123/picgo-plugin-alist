@@ -13,6 +13,25 @@ interface SingleUploadOptions {
   accessPath: string
   version: number
   accessDomain: string
+  accessFileNameTemplate?: string
+}
+
+interface AccessFileNameTemplateVars {
+  fileName: string
+}
+
+function parseAccessFileNameTemplate(template: string, vars: AccessFileNameTemplateVars): string {
+  const fileNameParts = vars.fileName.split('.')
+  const extension = fileNameParts.length > 1 ? `.${fileNameParts.pop()}` : ''
+  const nameWithoutExt = fileNameParts.join('.')
+
+  let result = template.replace(/\$\{fileName\}/g, nameWithoutExt)
+
+  if (extension) {
+    result += extension
+  }
+
+  return result
 }
 
 function handleFileName(fileName: string) {
@@ -28,13 +47,14 @@ async function handleSingleUpload(
   image: IImageInfo,
   options: SingleUploadOptions,
 ): Promise<void> {
-  const { url, token, uploadPath: originalUploadPath, accessPath: originalAccessPath, version, accessDomain } = options
+  const { url, token, uploadPath: originalUploadPath, accessPath: originalAccessPath, version, accessDomain, accessFileNameTemplate } = options
 
   const handledFileName = handleFileName(image.fileName)
 
   const fileName = handledFileName.fileName
   const uploadPath = handledFileName.prefixPath ? `${originalUploadPath}/${handledFileName.prefixPath}` : originalUploadPath
   const accessPath = handledFileName.prefixPath ? `${originalAccessPath}/${handledFileName.prefixPath}` : originalAccessPath
+  const accessFileName = accessFileNameTemplate ? parseAccessFileNameTemplate(accessFileNameTemplate, { fileName }) : fileName
 
   ctx.log.info(`[信息] version:${version}, uploadPath:${uploadPath}, fileName:${fileName}`)
 
@@ -71,7 +91,7 @@ async function handleSingleUpload(
 
   ctx.log.info(`[刷新请求结果] ${JSON.stringify({ code: refreshRes.data.code, message: refreshRes.data.message })}`)
 
-  const targetImgUrl = `${accessDomain}/d/${accessPath}/${fileName}`
+  const targetImgUrl = `${accessDomain}/d/${accessPath}/${accessFileName}`
 
   image.imgUrl = targetImgUrl
 
@@ -86,7 +106,7 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
   if (!userConfig)
     throw new Error('找不到上传器配置')
 
-  const options = {
+  const options: SingleUploadOptions = {
     url: rmEndSlashes(userConfig.url),
     token: userConfig.token,
     uploadPath: rmBothEndSlashes(userConfig.uploadPath),
@@ -97,6 +117,7 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
     accessDomain: userConfig.accessDomain
       ? rmBothEndSlashes(userConfig.accessDomain)
       : rmBothEndSlashes(userConfig.url),
+    accessFileNameTemplate: userConfig.accessFileNameTemplate,
   }
 
   const uploads = ctx.output.map(async (image) => {

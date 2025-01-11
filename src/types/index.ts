@@ -8,6 +8,7 @@ export interface UserConfig {
   uploadPath: string
   accessPath?: string
   accessDomain?: string
+  accessFileNameTemplate?: string
 }
 
 export interface PostOptions {

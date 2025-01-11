@@ -1,5 +1,6 @@
-import type { IConfig, IPluginConfig, PicGo } from 'picgo'
+import type { IPluginConfig, PicGo } from 'picgo'
 import type { UserConfig } from './types'
+import { IConfig } from 'picgo'
 
 export const uploaderName = 'alist'
 export const bedName = `picBed.${uploaderName}`
@@ -59,6 +60,14 @@ export function getConfig(ctx: PicGo): IPluginConfig[] {
       message: '自定义访问域名，若留空，则与alist地址一致。',
       required: false,
       alias: '访问域名',
+    },
+    {
+      name: 'accessFileNameTemplate',
+      type: 'input',
+      default: userConfig.accessFileNameTemplate ?? '',
+      message: `用于alist会重映射文件名的情况，详见github页面。例：prefix_$\{fileName\}_suffix`,
+      required: false,
+      alias: '访问文件名模板',
     },
   ]
   return config
