@@ -11,8 +11,6 @@ plugin for picgo
 [alist](https://github.com/alist-org/alist)是一个支持多存储的文件列表程序，使用 `Gin` 和 `Solidjs`。使用alist可以利用OneDrive等网盘快速搭建一个下载站。
 ![](/readme/alist.png)
 
-
-
 ## 参数
 
 | key         | 是否必填 | description                                                                    | example                   |
@@ -22,7 +20,6 @@ plugin for picgo
 | 上传路径    | √        | 上传的相对路径（alist内的路径，根据路径上传到对应网盘）                        | assets                    |
 | 管理员token | √        | 管理员token([参考alist文档](https://alist-doc.nn.ci/docs/driver/alist/#token)) | balabala                  |
 | 访问路径    | ×        | 公开的访问路径（资源最终链接，默认同上传路径）                                 | public                    |
-
 
 ## 说明
 ### 高版本签名

@@ -1,6 +1,7 @@
 {
   "name": "picgo-plugin-alist",
   "version": "1.3.0",
+  "packageManager": "pnpm@9.15.3",
   "description": "使用alist作为中转并实现对各个网盘的图床应用",
   "author": "jinzhi0123",
   "license": "ISC",
@@ -11,28 +12,41 @@
     "picgo-plugin",
     "alist"
   ],
-  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc -p .",
-    "dev": "tsc -w -p .",
-    "patch": "npm version patch && git push origin master && git push origin --tags",
-    "minor": "npm version minor && git push origin master && git push origin --tags",
-    "major": "npm version major && git push origin master && git push origin --tags"
+    "build": "unbuild",
+    "stub": "unbuild --stub",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "release": "bumpp && npm publish"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "js-base64": "^3.7.4",
-    "js-sha256": "^0.9.0",
-    "temp-dir": "2.0.0"
+    "form-data": "^4.0.1",
+    "js-base64": "^3.7.7",
+    "js-sha256": "^0.11.0",
+    "temp-dir": "^2.0.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^0.27.0",
-    "@types/node": "^18.8.2",
-    "eslint": "^8.24.0",
-    "picgo": "1.5.0-alpha.0",
-    "typescript": "^4.8.4"
+    "@antfu/eslint-config": "^3.13.0",
+    "@types/node": "^22.10.5",
+    "bumpp": "^9.10.0",
+    "eslint": "^9.17.0",
+    "picgo": "1.5.8",
+    "rollup": "^4.30.1",
+    "typescript": "^5.7.3",
+    "unbuild": "^3.2.0"
   }
 }
