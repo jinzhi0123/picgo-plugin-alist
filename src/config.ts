@@ -1,4 +1,4 @@
-import type { IPluginConfig, PicGo } from 'picgo'
+import type { IConfig, IPluginConfig, PicGo } from 'picgo'
 import type { UserConfig } from './types'
 
 export const uploaderName = 'alist'
@@ -11,7 +11,7 @@ export function getConfig(ctx: PicGo): IPluginConfig[] {
     userConfig = <any>{}
   }
 
-  const config = [
+  const config: IPluginConfig[] = [
     {
       name: 'version',
       type: 'input',
@@ -51,6 +51,14 @@ export function getConfig(ctx: PicGo): IPluginConfig[] {
       message: '若留空，则访问路径与上传路径一致。',
       required: false,
       alias: '访问路径',
+    },
+    {
+      name: 'accessDomain',
+      type: 'input',
+      default: userConfig.accessDomain ?? '',
+      message: '自定义访问域名，若留空，则与alist地址一致。',
+      required: false,
+      alias: '访问域名',
     },
   ]
   return config

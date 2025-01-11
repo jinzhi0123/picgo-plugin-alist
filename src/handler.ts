@@ -12,6 +12,7 @@ interface SingleUploadOptions {
   uploadPath: string
   accessPath: string
   version: number
+  accessDomain: string
 }
 
 function handleFileName(fileName: string) {
@@ -27,7 +28,7 @@ async function handleSingleUpload(
   image: IImageInfo,
   options: SingleUploadOptions,
 ): Promise<void> {
-  const { url, token, uploadPath: originalUploadPath, accessPath: originalAccessPath, version } = options
+  const { url, token, uploadPath: originalUploadPath, accessPath: originalAccessPath, version, accessDomain } = options
 
   const handledFileName = handleFileName(image.fileName)
 
@@ -70,7 +71,12 @@ async function handleSingleUpload(
 
   ctx.log.info(`[刷新请求结果] ${JSON.stringify({ code: refreshRes.data.code, message: refreshRes.data.message })}`)
 
-  image.imgUrl = `${url}/d/${accessPath}/${fileName}`
+  const targetImgUrl = `${accessDomain}/d/${accessPath}/${fileName}`
+
+  image.imgUrl = targetImgUrl
+
+  ctx.log.info(`[上传成功] ${image.fileName} -> ${targetImgUrl}`)
+
   delete image.base64Image
   delete image.buffer
 }
@@ -88,6 +94,9 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
       ? rmBothEndSlashes(userConfig.accessPath)
       : rmBothEndSlashes(userConfig.uploadPath),
     version: Number(userConfig.version),
+    accessDomain: userConfig.accessDomain
+      ? rmBothEndSlashes(userConfig.accessDomain)
+      : rmBothEndSlashes(userConfig.url),
   }
 
   const uploads = ctx.output.map(async (image) => {

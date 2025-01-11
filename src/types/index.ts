@@ -6,7 +6,8 @@ export interface UserConfig {
   url: string
   token: string
   uploadPath: string
-  accessPath: string
+  accessPath?: string
+  accessDomain?: string
 }
 
 export interface PostOptions {
