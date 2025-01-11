@@ -1,5 +1,6 @@
 import { sha256 } from 'js-sha256'
-export const getSign = (path: string, token: string, expireTimeStamp: string) => {
+
+export function getSign(path: string, token: string, expireTimeStamp: string) {
   /* in contribution
   * may be deprecated
   */
@@ -9,6 +10,5 @@ export const getSign = (path: string, token: string, expireTimeStamp: string) =>
   // const _sign = encode(hash.toString())
   // const sign = `${_sign}:${expireTimeStamp}`
   const buf = hash.arrayBuffer()
-  return `${btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_")}:${expireTimeStamp}`
+  return `${btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_')}:${expireTimeStamp}`
 }
-

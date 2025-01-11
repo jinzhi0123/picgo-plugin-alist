@@ -1,4 +1,6 @@
-import type { Stream } from 'stream'
+import type { Buffer } from 'node:buffer'
+import type { Stream } from 'node:stream'
+
 export interface UserConfig {
   version: string | number
   url: string
@@ -11,7 +13,7 @@ export interface PostOptions {
   url: string
   uploadPath: string
   token: string
-  files: Stream
+  files: Stream | Buffer
   version: number
   fileName?: string
 }
@@ -28,4 +30,10 @@ export interface Files {
   options: {
     fileName: string
   }
+}
+
+export interface AlistResponse<T = any> {
+  code: number
+  message: string
+  data: T
 }

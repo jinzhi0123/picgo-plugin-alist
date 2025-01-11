@@ -1,89 +1,83 @@
-import type { PostOptions, RefreshOptions, UserConfig } from './types'
+import type { IReqOptions } from 'picgo'
+import type { PostOptions, RefreshOptions } from './types'
+import FormData from 'form-data'
 
-export const getRefreshOptions = (options: RefreshOptions) => {
+export function getRefreshOptions(options: RefreshOptions): IReqOptions {
   const { url, token, uploadPath, version } = options
-  const v3options = {
-    method: 'POST',
-    url: `${url}/api/fs/list`,
-    rejectUnauthorized: false,
-    // contentType: 'application/json',
-    headers: {
-      'User-Agent': 'PicGo',
-      'Authorization': token,
-    },
-    body: {
-      page: 1,
-      password: "",
-      path: `/${uploadPath}`,
-      per_page: 0,
-      refresh: true,
-    },
-    json: true,
+  if (version === 2) {
+    const v2options: IReqOptions = {
+      method: 'POST',
+      url: `${url}/api/admin/refresh`,
+      resolveWithFullResponse: true,
+      headers: {
+        'User-Agent': 'PicGo',
+        'Authorization': token,
+      },
+      data: {
+        path: `/${uploadPath}`,
+      },
+    }
+    return v2options
   }
-  const v2options = {
-    method: 'POST',
-    url: `${url}/api/admin/refresh`,
-    rejectUnauthorized: false,
-    contentType: 'application/json',
-    headers: {
-      'User-Agent': 'PicGo',
-      'Authorization': token,
-    },
-    body: {
-      path: `/${uploadPath}`,
-    },
-    json: true,
-  }
-  switch (version) {
-    case 2:return v2options
-    case 3:return v3options
+  else if (version === 3) {
+    const v3options: IReqOptions = {
+      method: 'POST',
+      url: `${url}/api/fs/list`,
+      resolveWithFullResponse: true,
+      headers: {
+        'User-Agent': 'PicGo',
+        'Authorization': token,
+      },
+      data: {
+        page: 1,
+        password: '',
+        path: `/${uploadPath}`,
+        per_page: 0,
+        refresh: true,
+      },
+    }
+    return v3options
   }
 }
 
-export const getPostOptions = (options: PostOptions) => {
+export function getPostOptions(options: PostOptions): IReqOptions {
   const { url, files, token, uploadPath, version, fileName } = options
-  const v2options = {
-    method: 'POST',
-    url: `${url}/api/public/upload`,
-    rejectUnauthorized: false,
-    headers: {
-      // "Content-Type": 'multipart/form-data',
-      'User-Agent': 'PicGo',
-      'Authorization': token,
-    },
-    formData: {
-      path: uploadPath,
-      files: {
-        value: files,
-        options: {
-          filename: fileName,
-        },
+  if (version === 2) {
+    const formData = new FormData()
+    formData.append('files', files, {
+      filename: fileName,
+    })
+    formData.append('path', uploadPath)
+
+    const v2options: IReqOptions = {
+      method: 'POST',
+      url: `${url}/api/public/upload`,
+      resolveWithFullResponse: true,
+      headers: {
+        'User-Agent': 'PicGo',
+        'Authorization': token,
       },
-    },
-    json: true,
+      data: formData,
+    }
+    return v2options
   }
-  const v3options = {
-    method: 'PUT',
-    url: `${url}/api/fs/form`,
-    rejectUnauthorized: false,
-    headers: {
-      // "Content-Type": 'multipart/form-data',
-      'User-Agent': 'PicGo',
-      'Authorization': token,
-      'file-path': encodeURIComponent(`/${uploadPath}/${fileName}`),
-    },
-    formData: {
-      file: {
-        value: files,
-        options: {
-          filename: fileName,
-        },
+  else if (version === 3) {
+    const formData = new FormData()
+    formData.append('file', files, {
+      filename: fileName,
+    })
+
+    const v3options: IReqOptions = {
+      method: 'PUT',
+      url: `${url}/api/fs/form`,
+      resolveWithFullResponse: true,
+      headers: {
+        'User-Agent': 'PicGo',
+        'Authorization': token,
+        'file-path': encodeURIComponent(`/${uploadPath}/${fileName}`),
       },
-    },
-    json: true,
-  }
-  switch (version) {
-    case 2:return v2options
-    case 3:return v3options
+      data: formData,
+    }
+    return v3options
   }
 }

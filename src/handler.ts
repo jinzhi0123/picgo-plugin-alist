@@ -1,86 +1,86 @@
-import nodePath from 'path'
-import fs from 'fs'
-import type { PicGo } from 'picgo'
-import temporaryDirectory from 'temp-dir'
-import { rmBothEndSlashes, rmEndSlashes } from './utils/index'
+import type { IReqOptions, PicGo } from 'picgo'
+import type { AlistResponse, UserConfig } from './types'
 import { bedName } from './config'
-import type { PostOptions, RefreshOptions, UserConfig } from './types'
 import { getPostOptions, getRefreshOptions } from './option'
+import { rmBothEndSlashes, rmEndSlashes } from './utils/index'
 
-export const handle = async (ctx: PicGo): Promise<PicGo> => {
+type IImageInfo = PicGo['output'][0]
+
+interface SingleUploadConfig {
+  url: string
+  token: string
+  uploadPath: string
+  accessPath: string
+  version: number
+}
+
+async function handleSingleUpload(
+  ctx: PicGo,
+  image: IImageInfo,
+  config: SingleUploadConfig,
+): Promise<void> {
+  const { url, token, uploadPath, accessPath, version } = config
+
+  const fileName = image.fileName
+
+  ctx.log.info(`[信息] version:${version}, uploadPath:${uploadPath}, fileName:${image.fileName}`)
+
+  // 上传文件
+  const postOptions = getPostOptions({
+    url,
+    token,
+    uploadPath,
+    files: image.buffer,
+    version,
+    fileName,
+  })
+
+  ctx.log.info(`[开始上传] ${fileName}`)
+  const uploadRes = await ctx.request<AlistResponse, IReqOptions>(postOptions)
+
+  if (uploadRes.status !== 200)
+    throw new Error(`[上传失败] 文件: ${fileName} 结果: ${uploadRes.statusCode} ${uploadRes.statusText}`)
+
+  if (!uploadRes.data || uploadRes.data.code !== 200)
+    throw new Error(`[上传失败] 文件: ${fileName} 结果: ${JSON.stringify(uploadRes.data)}`)
+
+  ctx.log.info(`[上传请求结果] ${JSON.stringify(uploadRes.data)}`)
+
+  // 刷新目录
+  const refreshOptions = getRefreshOptions({ url, uploadPath, version, token })
+  const refreshRes = await ctx.request<AlistResponse, IReqOptions>(refreshOptions)
+
+  if (refreshRes.status !== 200)
+    throw new Error(`[刷新失败] ${refreshRes.statusCode} ${refreshRes.statusText}`)
+
+  if (!refreshRes.data || refreshRes.data.code !== 200)
+    throw new Error(`[刷新失败] ${JSON.stringify(refreshRes.data)}`)
+
+  ctx.log.info(`[刷新请求结果] ${JSON.stringify({ code: refreshRes.data.code, message: refreshRes.data.message })}`)
+
+  image.imgUrl = `${url}/d/${accessPath}/${image.fileName}`
+  delete image.base64Image
+  delete image.buffer
+}
+
+export async function handle(ctx: PicGo): Promise<PicGo> {
   const userConfig: UserConfig = ctx.getConfig(bedName)
   if (!userConfig)
-    throw new Error("Can't find uploader config")
-  let { url, uploadPath, accessPath, version } = userConfig
-  const { token } = userConfig
-  uploadPath = rmBothEndSlashes(uploadPath)
-  if (!accessPath)
-    accessPath = uploadPath
-  else
-    accessPath = rmBothEndSlashes(accessPath)
-  url = rmEndSlashes(url)
-  version = Number(version)
-  const imgList = ctx.output
-  for (const i in imgList) {
+    throw new Error('找不到上传器配置')
+
+  const config = {
+    url: rmEndSlashes(userConfig.url),
+    token: userConfig.token,
+    uploadPath: rmBothEndSlashes(userConfig.uploadPath),
+    accessPath: userConfig.accessPath
+      ? rmBothEndSlashes(userConfig.accessPath)
+      : rmBothEndSlashes(userConfig.uploadPath),
+    version: Number(userConfig.version),
+  }
+
+  const uploads = ctx.output.map(async (image) => {
     try {
-      const image = imgList[i].buffer
-      const fileName = imgList[i].fileName
-      const tempFilePath = nodePath.join(temporaryDirectory, fileName)
-      ctx.log.info(`[信息]\{version:${version},uploadPath:${uploadPath},fileName:${fileName}\}`)
-      try {
-        fs.writeFileSync(tempFilePath, image)
-      }
-      catch (err) {
-        throw new Error(`[缓存文件失败]文件${tempFilePath},${err.message}`)
-      }
-      ctx.log.info(`[信息]已经写入文件${tempFilePath}`)
-      const stream = fs.createReadStream(tempFilePath)
-      if (!stream)
-        throw new Error(`[读取缓存文件失败]文件${tempFilePath}`)
-      const postOptions = getPostOptions({
-        url,
-        token,
-        uploadPath,
-        files: stream,
-        version,
-        fileName,
-      })
-      try {
-        const res = await ctx.request(postOptions)
-        ctx.log.info(`[请求结果]${JSON.stringify(res)}`)
-        if (res.code !== Number(200))
-          throw new Error(`[请求出错]${JSON.stringify(res)}`)
-        imgList[i].imgUrl = `${url}/d/${accessPath}/${imgList[i].fileName}`
-      }
-      catch (err) {
-        throw new Error(`[上传操作]异常：${err.message}`)
-      }
-      finally {
-        stream.close()
-      }
-      try {
-        fs.unlinkSync(tempFilePath)
-      }
-      catch (err) {
-        ctx.log.warn(`[删除缓存文件失败]文件${tempFilePath}，程序继续执行,ERROR:${err}`)
-      }
-      try {
-        const refreshOptions = getRefreshOptions({
-          url,
-          uploadPath,
-          version,
-          token,
-        })
-        const res = await ctx.request(refreshOptions)
-        ctx.log.info(`[刷新请求结果]\{code:${res.code},message:${res.message}\}`)
-        if (res.code !== Number(200))
-          throw new Error(`[刷新请求出错]${res}`)
-      }
-      catch (err) {
-        throw new Error(`[刷新操作]异常：${err.message}`)
-      }
-      delete imgList[i].base64Image
-      delete imgList[i].buffer
+      await handleSingleUpload(ctx, image, config)
     }
     catch (error) {
       ctx.log.error(error)
@@ -89,6 +89,8 @@ export const handle = async (ctx: PicGo): Promise<PicGo> => {
         body: error.message,
       })
     }
-  }
+  })
+
+  await Promise.all(uploads)
   return ctx
 }

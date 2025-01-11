@@ -4,7 +4,7 @@ import type { UserConfig } from './types'
 export const uploaderName = 'alist'
 export const bedName = `picBed.${uploaderName}`
 
-export const getConfig = (ctx: PicGo): IPluginConfig[] => {
+export function getConfig(ctx: PicGo): IPluginConfig[] {
   let userConfig: UserConfig = ctx.getConfig(bedName)
   if (!userConfig) {
   // throw new Error("Can't find uploader config")
