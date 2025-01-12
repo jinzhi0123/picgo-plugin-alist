@@ -145,7 +145,7 @@ async function getTokenByAuth(ctx: PicGo, url: string, username: string, passwor
     },
   })
   if (res.status !== 200 || !res.data || res.data.code !== 200) {
-    throw new Error(`[获取token失败] 请检查用户名和密码是否正确。 状态码： ${res.statusCode} ${res.statusText}`)
+    throw new Error(`[获取token失败] 请检查用户名和密码是否正确。 请求结果： ${res.statusCode} ${res.statusText} ${JSON.stringify(res.data ?? {})}`)
   }
 
   const token: string = res.data.data.token
@@ -156,25 +156,29 @@ async function getTokenByAuth(ctx: PicGo, url: string, username: string, passwor
 
 export async function handle(ctx: PicGo): Promise<PicGo> {
   const userConfig: UserConfig = ctx.getConfig(bedName)
+  const url = rmEndSlashes(userConfig.url)
+  const username = userConfig.username
+  const password = userConfig.password
+
   if (!userConfig)
     throw new Error('找不到上传器配置')
 
-  if (!userConfig.token && (!userConfig.username || !userConfig.password)) {
+  if (!userConfig.token && (!username || !password)) {
     throw new Error('请填写用户名和密码或者token')
   }
 
   let token: string
-  const authMode = userConfig.username && userConfig.password ? 'username-password' : 'token'
+  const authMode = username && password ? 'username-password' : 'token'
   if (authMode === 'username-password') {
     ctx.log.info('[信息] 用户名与密码模式')
-    token = await getTokenByAuth(ctx, userConfig.url, userConfig.username, userConfig.password)
+    token = await getTokenByAuth(ctx, url, username, password)
   }
   else {
     token = userConfig.token
   }
 
   const options: SingleUploadOptions = {
-    url: rmEndSlashes(userConfig.url),
+    url,
     token,
     uploadPath: rmBothEndSlashes(userConfig.uploadPath),
     accessPath: userConfig.accessPath
@@ -186,8 +190,8 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
       : rmBothEndSlashes(userConfig.url),
     accessFileNameTemplate: userConfig.accessFileNameTemplate,
     authMode,
-    username: userConfig.username,
-    password: userConfig.password,
+    username,
+    password,
   }
 
   const uploads = ctx.output.map(async (image) => {
