@@ -1,6 +1,5 @@
 import type { IPluginConfig, PicGo } from 'picgo'
-import type { UserConfig } from './types'
-import { IConfig } from 'picgo'
+import type { InternalConfig, UserConfig } from './types'
 
 export const uploaderName = 'alist'
 export const bedName = `picBed.${uploaderName}`
@@ -41,9 +40,25 @@ export function getConfig(ctx: PicGo): IPluginConfig[] {
       name: 'token',
       type: 'password',
       default: userConfig.token ?? '',
-      message: '填写管理员token，获取请参考alist文档。',
-      required: true,
-      alias: '管理员token',
+      message: '填写用户token，获取请参考alist文档。',
+      required: false,
+      alias: '用户token',
+    },
+    {
+      name: 'username',
+      type: 'input',
+      default: userConfig.username ?? '',
+      message: '填写用户名，与用户token二选一。',
+      required: false,
+      alias: '用户名',
+    },
+    {
+      name: 'password',
+      type: 'password',
+      default: userConfig.password ?? '',
+      message: '填写密码，与用户token二选一。',
+      required: false,
+      alias: '密码',
     },
     {
       name: 'accessPath',
@@ -71,4 +86,71 @@ export function getConfig(ctx: PicGo): IPluginConfig[] {
     },
   ]
   return config
+}
+
+type SetConfigOptions = SetConfigSetOptions | SetConfigAddOptions
+
+interface SetBaseConfigOptions {
+  save?: boolean
+  action?: 'set' | 'add'
+  internal?: boolean
+}
+
+interface SetConfigSetOptions extends SetBaseConfigOptions {
+  action: 'set'
+  internal: false
+}
+
+interface SetConfigAddOptions extends SetBaseConfigOptions {
+  action: 'add'
+  internal: boolean
+}
+
+const defaultOptions: SetBaseConfigOptions = {
+  save: false,
+}
+
+export function setConfig(ctx: PicGo, configs: Record<string, any>, options?: SetConfigOptions): void {
+  const originalConfig: UserConfig = ctx.getConfig(bedName)
+
+  const { save, action, internal } = { ...defaultOptions, ...options }
+
+  let newConfig: any
+  if (action === 'set') {
+    newConfig = { ...configs }
+  }
+  else if (action === 'add') {
+    if (internal) {
+      newConfig = { ...originalConfig, ...Object.fromEntries(
+        Object.entries(configs).map(([key, value]) => [`sys_${key}`, value]),
+      ) }
+    }
+    else {
+      newConfig = { ...originalConfig, ...configs }
+    }
+  }
+
+  if (save) {
+    ctx.saveConfig({
+      [bedName]: newConfig,
+    })
+  }
+  else {
+    ctx.setConfig({
+      [bedName]: newConfig,
+    })
+  }
+}
+
+export function setToken(ctx: PicGo, token: string, refreshedAt: number): void {
+  setConfig(ctx, { token, tokenRefreshedAt: String(refreshedAt) }, { save: true, action: 'add', internal: true })
+}
+
+export function getToken(ctx: PicGo) {
+  const token: string = ctx.getConfig(`${bedName}.sys_token`)
+  const refreshedAt: string = ctx.getConfig(`${bedName}.sys_tokenRefreshedAt`)
+  return {
+    token,
+    refreshedAt: Number(refreshedAt),
+  }
 }

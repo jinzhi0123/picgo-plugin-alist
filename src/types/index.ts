@@ -1,14 +1,23 @@
 import type { Buffer } from 'node:buffer'
 import type { Stream } from 'node:stream'
 
-export interface UserConfig {
+export type UserConfig = {
   version: string | number
   url: string
+  username: string
+  password: string
   token: string
   uploadPath: string
   accessPath?: string
   accessDomain?: string
   accessFileNameTemplate?: string
+} & {
+  [K in keyof InternalConfig as `sys_${string & K}`]: InternalConfig[K]
+}
+
+export interface InternalConfig {
+  token?: string
+  tokenRefreshedAt: string
 }
 
 export interface PostOptions {

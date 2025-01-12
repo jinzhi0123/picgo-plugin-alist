@@ -1,10 +1,12 @@
 import type { IReqOptions, PicGo } from 'picgo'
 import type { AlistResponse, UserConfig } from './types'
-import { bedName } from './config'
+import { bedName, getToken, setToken } from './config'
 import { getPostOptions, getRefreshOptions } from './option'
 import { rmBothEndSlashes, rmEndSlashes } from './utils/index'
 
 type IImageInfo = PicGo['output'][0]
+
+const UPLOAD_AUTH_RETRY_LIMIT_TIMES = 1
 
 interface SingleUploadOptions {
   url: string
@@ -14,6 +16,9 @@ interface SingleUploadOptions {
   version: number
   accessDomain: string
   accessFileNameTemplate?: string
+  authMode: 'token' | 'username-password'
+  password?: string
+  username?: string
 }
 
 interface AccessFileNameTemplateVars {
@@ -47,7 +52,7 @@ async function handleSingleUpload(
   image: IImageInfo,
   options: SingleUploadOptions,
 ): Promise<void> {
-  const { url, token, uploadPath: originalUploadPath, accessPath: originalAccessPath, version, accessDomain, accessFileNameTemplate } = options
+  const { url, token: originalToken, uploadPath: originalUploadPath, accessPath: originalAccessPath, version, accessDomain, accessFileNameTemplate } = options
 
   const handledFileName = handleFileName(image.fileName)
 
@@ -58,47 +63,95 @@ async function handleSingleUpload(
 
   ctx.log.info(`[信息] version:${version}, uploadPath:${uploadPath}, fileName:${fileName}`)
 
-  // 上传文件
-  const postOptions = getPostOptions({
-    url,
-    token,
-    uploadPath,
-    files: image.buffer,
-    version,
-    fileName,
-  })
-
   ctx.log.info(`[开始上传] ${image.fileName}`)
-  const uploadRes = await ctx.request<AlistResponse, IReqOptions>(postOptions)
+  let retryTimes = 0
+  let token = originalToken
 
-  if (uploadRes.status !== 200)
-    throw new Error(`[上传失败] 文件: ${fileName} 结果: ${uploadRes.statusCode} ${uploadRes.statusText}`)
+  while (retryTimes <= UPLOAD_AUTH_RETRY_LIMIT_TIMES) {
+    // 上传文件
+    const postOptions = getPostOptions({
+      url,
+      token,
+      uploadPath,
+      files: image.buffer,
+      version,
+      fileName,
+    })
 
-  if (!uploadRes.data || uploadRes.data.code !== 200)
-    throw new Error(`[上传失败] 文件: ${fileName} 结果: ${JSON.stringify(uploadRes.data)}`)
+    ctx.log.info(`[开始上传] ${image.fileName} 第${retryTimes + 1}次尝试`)
+    const uploadRes = await ctx.request<AlistResponse, IReqOptions>(postOptions)
+    const authFailed = uploadRes.status === 401 || (uploadRes.status === 200 && uploadRes.data.code === 401)
+    // 处理401认证失败的情况
+    if (authFailed && options.authMode === 'username-password' && retryTimes < UPLOAD_AUTH_RETRY_LIMIT_TIMES) {
+      ctx.log.warn(`[认证失败] 正在尝试重新获取token (${retryTimes + 1}/${UPLOAD_AUTH_RETRY_LIMIT_TIMES})`)
+      token = await getTokenByAuth(ctx, url, options.username, options.password, { forceRefresh: true })
+      retryTimes++
+      continue
+    }
 
-  ctx.log.info(`[上传请求结果] ${JSON.stringify(uploadRes.data)}`)
+    if (uploadRes.status !== 200)
+      throw new Error(`[上传失败] 文件: ${fileName} 结果: ${uploadRes.statusCode} ${uploadRes.statusText}`)
 
-  // 刷新目录
-  const refreshOptions = getRefreshOptions({ url, uploadPath, version, token })
-  const refreshRes = await ctx.request<AlistResponse, IReqOptions>(refreshOptions)
+    if (!uploadRes.data || uploadRes.data.code !== 200)
+      throw new Error(`[上传失败] 文件: ${fileName} 结果: ${JSON.stringify(uploadRes.data)}`)
 
-  if (refreshRes.status !== 200)
-    throw new Error(`[刷新失败] ${refreshRes.statusCode} ${refreshRes.statusText}`)
+    ctx.log.info(`[上传请求结果] ${JSON.stringify(uploadRes.data)}`)
 
-  if (!refreshRes.data || refreshRes.data.code !== 200)
-    throw new Error(`[刷新失败] ${JSON.stringify(refreshRes.data)}`)
+    // 刷新目录
+    const refreshOptions = getRefreshOptions({ url, uploadPath, version, token })
+    const refreshRes = await ctx.request<AlistResponse, IReqOptions>(refreshOptions)
 
-  ctx.log.info(`[刷新请求结果] ${JSON.stringify({ code: refreshRes.data.code, message: refreshRes.data.message })}`)
+    if (refreshRes.status !== 200)
+      throw new Error(`[刷新失败] ${refreshRes.statusCode} ${refreshRes.statusText}`)
 
-  const targetImgUrl = `${accessDomain}/d/${accessPath}/${accessFileName}`
+    if (!refreshRes.data || refreshRes.data.code !== 200)
+      throw new Error(`[刷新失败] ${JSON.stringify(refreshRes.data)}`)
 
-  image.imgUrl = targetImgUrl
+    ctx.log.info(`[刷新请求结果] ${JSON.stringify({ code: refreshRes.data.code, message: refreshRes.data.message })}`)
 
-  ctx.log.info(`[上传成功] ${image.fileName} -> ${targetImgUrl}`)
+    const targetImgUrl = `${accessDomain}/d/${accessPath}/${accessFileName}`
 
-  delete image.base64Image
-  delete image.buffer
+    image.imgUrl = targetImgUrl
+
+    ctx.log.info(`[上传成功] ${image.fileName} -> ${targetImgUrl}`)
+
+    delete image.base64Image
+    delete image.buffer
+
+    break
+  }
+}
+
+interface GetTokenByAuthOptions {
+  forceRefresh?: boolean
+}
+
+async function getTokenByAuth(ctx: PicGo, url: string, username: string, password: string, options?: GetTokenByAuthOptions) {
+  const storedToken = getToken(ctx)
+  if (!options?.forceRefresh && storedToken?.token && storedToken?.refreshedAt && storedToken?.refreshedAt > Date.now() - 1000 * 60 * 60 * 24 * 1) {
+    ctx.log.info('[信息] 从缓存中获取token')
+    return storedToken.token
+  }
+
+  const refreshedAt = Date.now()
+  ctx.log.info('[信息] 尝试使用用户名和密码请求API获取token')
+  const res = await ctx.request<AlistResponse, IReqOptions>({
+    method: 'POST',
+    url: `${url}/api/auth/login`,
+    resolveWithFullResponse: true,
+    data: {
+      username,
+      password,
+    },
+  })
+  if (res.status !== 200 || !res.data || res.data.code !== 200) {
+    throw new Error(`[获取token失败] 请检查用户名和密码是否正确。 状态码： ${res.statusCode} ${res.statusText}`)
+  }
+
+  const token: string = res.data.data.token
+  setToken(ctx, token, refreshedAt)
+
+  return token
 }
 
 export async function handle(ctx: PicGo): Promise<PicGo> {
@@ -106,9 +159,23 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
   if (!userConfig)
     throw new Error('找不到上传器配置')
 
+  if (!userConfig.token && (!userConfig.username || !userConfig.password)) {
+    throw new Error('请填写用户名和密码或者token')
+  }
+
+  let token: string
+  const authMode = userConfig.username && userConfig.password ? 'username-password' : 'token'
+  if (authMode === 'username-password') {
+    ctx.log.info('[信息] 用户名与密码模式')
+    token = await getTokenByAuth(ctx, userConfig.url, userConfig.username, userConfig.password)
+  }
+  else {
+    token = userConfig.token
+  }
+
   const options: SingleUploadOptions = {
     url: rmEndSlashes(userConfig.url),
-    token: userConfig.token,
+    token,
     uploadPath: rmBothEndSlashes(userConfig.uploadPath),
     accessPath: userConfig.accessPath
       ? rmBothEndSlashes(userConfig.accessPath)
@@ -118,6 +185,9 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
       ? rmBothEndSlashes(userConfig.accessDomain)
       : rmBothEndSlashes(userConfig.url),
     accessFileNameTemplate: userConfig.accessFileNameTemplate,
+    authMode,
+    username: userConfig.username,
+    password: userConfig.password,
   }
 
   const uploads = ctx.output.map(async (image) => {
