@@ -109,7 +109,7 @@ async function handleSingleUpload(
 
     ctx.log.info(`[刷新请求结果] ${JSON.stringify({ code: refreshRes.data.code, message: refreshRes.data.message })}`)
 
-    const targetImgUrl = `${accessDomain}/d/${accessPath}/${accessFileName}`
+    const targetImgUrl = `${accessDomain}/${accessPath}/${accessFileName}`
 
     image.imgUrl = targetImgUrl
 
@@ -183,7 +183,7 @@ export async function handle(ctx: PicGo): Promise<PicGo> {
     uploadPath: rmBothEndSlashes(userConfig.uploadPath),
     accessPath: userConfig.accessPath
       ? rmBothEndSlashes(userConfig.accessPath)
-      : rmBothEndSlashes(userConfig.uploadPath),
+      : `d/${rmBothEndSlashes(userConfig.uploadPath)}`,
     version: Number(userConfig.version),
     accessDomain: userConfig.accessDomain
       ? rmBothEndSlashes(userConfig.accessDomain)
